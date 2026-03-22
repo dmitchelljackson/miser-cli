@@ -1,0 +1,30 @@
+[
+  {
+    "id": "claude",
+    "name": "Claude Code",
+    "command": "claude",
+    "priority": 1,
+    "enabled": true
+  },
+  {
+    "id": "gemini",
+    "name": "Gemini CLI",
+    "command": "gemini",
+    "priority": 2,
+    "enabled": true
+  },
+  {
+    "id": "qwen",
+    "name": "Qwen Code",
+    "command": "qwen",
+    "priority": 3,
+    "enabled": true
+  },
+  {
+    "id": "mistral",
+    "name": "Mistral Vibe",
+    "command": "vibe",
+    "priority": 4,
+    "enabled": true
+  }
+]

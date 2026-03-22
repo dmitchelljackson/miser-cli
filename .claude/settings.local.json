@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node:*)",
+      "Bash(vibe --version)",
+      "Bash(MISTRAL_API_KEY=test vibe -p \"say hello\")",
+      "Bash(env -i PATH=\"$PATH\" HOME=\"$HOME\" vibe -p \"say hello\")",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(vibe:*)",
+      "WebSearch",
+      "WebFetch(domain:mermaid.ink)",
+      "Bash(npx -y @mermaid-js/mermaid-cli --version)",
+      "Bash(npx --yes @mermaid-js/mermaid-cli mmdc -i /tmp/ralph-flow.mmd -o /tmp/ralph-flow.png -t dark --quiet)",
+      "Bash(npx --yes @mermaid-js/mermaid-cli -i /tmp/ralph-flow.mmd -o /tmp/ralph-flow.png --quiet)",
+      "Bash(npx @mermaid-js/mermaid-cli -i /tmp/ralph-flow.mmd -o /tmp/ralph-flow2.png --scale 3 --quiet)",
+      "Bash(open:*)",
+      "Bash(npm install:*)",
+      "Bash(miser --help)",
+      "Bash(miser run:*)",
+      "Bash(miser \"what is 1+1? just the number\")"
+    ]
+  }
+}

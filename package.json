@@ -1,0 +1,19 @@
+{
+  "name": "miser",
+  "version": "0.1.0",
+  "description": "CLI that routes coding prompts through a hierarchy of free-tier AI coding agents",
+  "bin": {
+    "miser": "./bin/miser.js"
+  },
+  "scripts": {
+    "start": "node bin/miser.js"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "commander": "^12.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT"
+}
