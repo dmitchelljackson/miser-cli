@@ -1,41 +1,43 @@
 # miser
 
-> Get the most out of free-tier AI coding agents by routing prompts through them automatically — frontier models, zero dollars.
+> Frontier AI coding agents, free tier, no babysitting required.
 
 > [!NOTE]
 > This project was 100% vibe coded. Every line of it. It is very much alpha software and may be rough around the edges — use it, break it, file issues, send PRs. You have been warned (twice now, if you count the bit about the VM).
 
-The AI coding agent landscape is crowded right now, and most of the major players offer generous free tiers to win you over. miser is a single CLI that sits in front of all of them. You send it a prompt, it tries your preferred agent first, and when that one hits its daily limit it quietly falls through to the next one. By the end of the chain you've got access to thousands of free requests per day across multiple frontier-class models before you even touch a paid tier.
+The AI coding agent landscape is crowded right now and most of the major players offer generous free tiers to win you over. The problem is they all have daily limits, and when you hit one you're just... stuck. Waiting. Or paying.
+
+miser fixes that. It's a single CLI that sits in front of all of them. Send it a prompt, it tries your preferred agent first, and when that one hits its limit it quietly falls through to the next one. By the time you've chained a few agents together you've got thousands of free requests per day across frontier-class models before you even think about opening your wallet.
 
 It's not a wrapper or an abstraction — it just invokes the real CLI tools you already have installed, in the order you configure, and hands you back the result. Think of it as a load balancer for your free AI credits.
 
 **Why miser?**
-- AI coding agents have daily and monthly free limits. Hit one, move on automatically instead of waiting or paying.
-- Most free tiers reset every 24 hours. With a few agents in the chain you're unlikely to exhaust all of them in a day.
-- You stay on the real tools — auth, context, and file access all work exactly as each agent intends.
-- Supports long-running agentic work via the `--ralph` loop mode: agents iterate on a task across sessions until it's done, resuming automatically if interrupted.
+- Hit a rate limit? Move on automatically instead of waiting or paying.
+- Free tiers reset every 24 hours. With a few agents in the chain you're unlikely to exhaust all of them in a day.
+- You're on the real tools the whole time — auth, context, and file access all work exactly as each agent intends.
+- Got a big task? `--ralph` mode loops agents iteratively until the work is done, picking up right where it left off if something interrupts it.
 
 **Agents (in default priority order):**
-1. [Claude Code](https://claude.ai/code) — your paid subscription, always tried first
-2. [Gemini CLI](https://github.com/google-gemini/gemini-cli) — Gemini 2.5, 1,000 req/day free
-3. [Qwen Code](https://github.com/QwenLM/qwen-code) — Qwen3-Coder (frontier-class), 1,000 req/day free
-4. [Mistral Vibe](https://github.com/mistralai/mistral-vibe) — Devstral-2, ~1B tokens/month free
+1. [Claude Code](https://claude.ai/code) — your paid subscription goes first (skip it if you want fully free — see below)
+2. [Gemini CLI](https://github.com/google-gemini/gemini-cli) — Gemini 2.5, 1,000 req/day free with a Google account
+3. [Qwen Code](https://github.com/QwenLM/qwen-code) — Qwen3-Coder (frontier-class), 1,000 req/day free with a Qwen account
+4. [Mistral Vibe](https://github.com/mistralai/mistral-vibe) — Devstral-2, ~1B tokens/month free, no card required
 
-All four are frontier or near-frontier models. The order is configurable.
+All four are frontier or near-frontier models. The order is yours to configure.
 
 ---
 
 ## ⚠️ Permissions Warning
 
-**By default, miser runs all agents in unsafe/auto-approve mode.** This means agents will read, write, and execute code on your machine without asking for permission on each action.
+**By default, miser runs all agents in unsafe/auto-approve mode.** Agents will read, write, and execute code on your machine without stopping to ask permission on each action. That's intentional — it's what makes non-interactive use possible.
 
-This is intentional — it's what makes non-interactive use possible. If you want agents to prompt before each action, use the `--coward` flag:
+If you'd rather agents ask before doing anything destructive, use the `--coward` flag:
 
 ```bash
 miser --coward "refactor the payment module"
 ```
 
-Note: Mistral Vibe is skipped entirely in coward mode because it cannot run non-interactively without auto-approve.
+One caveat: Mistral Vibe gets skipped entirely in coward mode because it physically cannot run non-interactively without auto-approve. That's on them, not us.
 
 > [!WARNING]
 > The `--coward` flag is a joke. The risk it guards against is not.
@@ -48,12 +50,10 @@ Note: Mistral Vibe is skipped entirely in coward mode because it cannot run non-
 
 ## Installation
 
-### Prerequisites
-
-Install the agent CLIs you want to use:
+### Step 1 — Install the agent CLIs you want
 
 ```bash
-# Claude Code (paid — skip if you want fully free, see below)
+# Claude Code (paid — skip this if you want fully free, see below)
 npm install -g @anthropic-ai/claude-code
 
 # Gemini CLI (free — 1,000 req/day with a Google account)
@@ -62,25 +62,23 @@ npm install -g @google/gemini-cli
 # Qwen Code (free — 1,000 req/day with a Qwen account)
 npm install -g @qwen-code/qwen-code
 
-# Mistral Vibe (free — ~1B tokens/month)
+# Mistral Vibe (free — ~1B tokens/month, no account needed)
 pip install mistral-vibe
 ```
 
-### Install miser
+### Step 2 — Install miser
 
 ```bash
-npm install -g miser-cli
+npm install -g dmitchelljackson/miser-cli
 ```
 
-### Authenticate
-
-Run the setup wizard to verify each agent is installed and authenticated:
+### Step 3 — Check everything works
 
 ```bash
 miser setup
 ```
 
-This shows a status table and prints exact install/auth instructions for anything that isn't ready:
+This shows you a table of what's installed and authenticated, and tells you exactly what to do for anything that isn't:
 
 ```
 miser — agent status
@@ -102,71 +100,68 @@ miser — agent status
 ## Usage
 
 ```bash
-# Basic prompt
+# The basics
 miser "fix the bug in auth.js"
 
-# Pass context files
+# Give it some context files to work with
 miser "what does this do?" --files src/auth.js src/db.js
 
-# Prompt from a file
+# Read the prompt from a file (useful for longer tasks)
 miser --prompt-file task.md --files src/auth.js
 
-# Coward mode (ask before every action)
+# Coward mode — agents ask before each action
 miser --coward "refactor the payment module"
 
-# Ralph loop — keeps working until the agent says it's done
+# Ralph mode — loop until the task is done
 miser --ralph "build a REST API with tests"
 
-# Ralph loop with a judge review step
+# Ralph mode with a judge that reviews the work before signing off
 miser --ralph --judge "implement the feature"
 
-# Ralph loop + judge + requirements file
+# Same, but give the judge a requirements file to compare against
 miser --ralph --judge --requirements SPEC.md "implement the feature"
 ```
 
-### Options
+### Flags
 
 | Flag | Description |
 |---|---|
-| `--prompt-file <path>` | Read prompt from a file |
-| `--files <paths...>` | Ancillary context files to include |
-| `--coward` | Require permission for each action (default: auto-approve) |
+| `--prompt-file <path>` | Read the prompt from a file instead of inline |
+| `--files <paths...>` | Context files to include (source files, specs, etc.) |
+| `--coward` | Ask for permission before each agent action (default: auto-approve) |
 | `--ralph` | Loop agents until the task is marked complete |
-| `--judge` | After completion, run a judge to approve or send back for rework (requires `--ralph`) |
-| `--judge-agent <id>` | Which agent to use as judge (default: `claude`) |
-| `--requirements <path>` | Requirements file for the judge to compare against |
+| `--judge` | After completion, run a judge agent to approve or send back for rework (requires `--ralph`) |
+| `--judge-agent <id>` | Which agent to use as judge — must match an id in `agents.json` (default: `claude`) |
+| `--requirements <path>` | Requirements file for the judge to compare the work against |
 
 ### Exit codes
 
 | Code | Meaning |
 |---|---|
-| `0` | Completed successfully |
-| `1` | All agents exhausted — run `miser setup` to diagnose |
-| `2` | Network/server error |
+| `0` | Done — check `./miser/status.json` for which agent got you there |
+| `1` | All agents exhausted — run `miser setup` to figure out why |
+| `2` | Network or server error |
 
 ---
 
 ## Ralph Loop
 
-The `--ralph` flag runs your prompt in an iterative loop based on the [Ralph Wiggum loop](https://ghuntley.com/ralph/) pattern. Each iteration:
+Named after the [Ralph Wiggum loop](https://ghuntley.com/ralph/) pattern — the idea is simple: just keep running the agent until it says it's done.
 
-1. The agent reads the original prompt and accumulated context from `./miser/ralph/context.md`
-2. Makes progress on the task
-3. **Must** append a progress update to `./miser/ralph/context.md` before stopping
-4. If all work is done, emits `<ralph-status>COMPLETE</ralph-status>` — otherwise the loop continues
+With `--ralph`, each iteration the agent gets the original prompt plus everything accumulated in `./miser/ralph/context.md` from previous runs. It does some work, appends a progress update to that file, and either emits `<ralph-status>COMPLETE</ralph-status>` to signal it's finished or just exits and lets the loop fire it up again.
 
-The loop is resilient:
-- **Network error:** retries the same agent after 1 minute
-- **All agents rate-limited:** waits 30 minutes, restarts from the top of the hierarchy
-- **Interrupted** (Ctrl+C, system shutdown, etc.): automatically resumes from where it left off on next run — pre-existing context is never wiped
+It's more resilient than it sounds:
+- **Network error** — retries the same agent after 1 minute
+- **All agents rate-limited** — waits 30 minutes and starts back at the top of the hierarchy
+- **Interrupted** (Ctrl+C, laptop closes, power dies) — picks up exactly where it left off next time you run it. Context is never wiped.
 
-With `--judge`, a separate judge agent (default: Claude Code) reviews the completed work and either approves it or sends it back with feedback for another loop.
+Throw `--judge` on top and once the worker says it's done, a separate judge agent (Claude by default) reviews the output against the original prompt. Approved? Done. Not satisfied? It sends feedback back to the worker and the loop continues.
 
 ---
 
-## Going Fully Free (Disable Claude Code)
+## Going Fully Free
 
-If you want miser to run without any paid subscription, disable Claude Code in `agents.json`:
+Don't have a Claude subscription or just want to go full free-tier? Disable Claude Code in `agents.json`:
 
 ```json
 [
@@ -181,52 +176,51 @@ If you want miser to run without any paid subscription, disable Claude Code in `
 ]
 ```
 
-With Claude disabled, miser falls through to:
-1. **Gemini CLI** — Gemini 2.5, 1,000 req/day free with a Google account
-2. **Qwen Code** — Qwen3-Coder (frontier-class), 1,000 req/day free with a Qwen account
-3. **Mistral Vibe** — Devstral-2, ~1B tokens/month free (no card required)
+With Claude out of the picture miser falls through to:
+1. **Gemini CLI** — Gemini 2.5, 1,000 req/day free
+2. **Qwen Code** — Qwen3-Coder, 1,000 req/day free
+3. **Mistral Vibe** — Devstral-2, ~1B tokens/month free (no card, no account, just vibes)
 
-Between Gemini and Qwen you get ~2,000 free requests per day from frontier-class models before Mistral's effectively unlimited free tier kicks in as a final fallback.
+That's roughly 2,000 free requests per day from genuine frontier models before Mistral's effectively unlimited tier kicks in as a safety net. Not bad for zero dollars.
 
-**To set up free-only agents:**
+**Auth for the free agents:**
 
 ```bash
 # Gemini — sign in with your Google account
 gemini auth
 
-# Qwen — create a free account at qwen.ai
+# Qwen — free account at qwen.ai
 qwen login
 
-# Mistral Vibe — no login required, just install and go
+# Mistral Vibe — nothing to do, just install it
 pip install mistral-vibe
 ```
-
-You can also reorder agents in `agents.json` by changing their `priority` values.
 
 ---
 
 ## Status & Logs
 
-Every invocation writes to `./miser/` in the current directory:
+Every run writes to `./miser/` in your current directory. The header miser prints at startup tells you exactly where to look:
 
-| File | Contents |
-|---|---|
-| `miser/status.json` | Current state: which agent ran, success/failure, timestamps |
-| `miser/miser.log` | Full run log — tail this for real-time updates |
-| `miser/ralph/status.json` | Ralph loop state (for resume) |
-| `miser/ralph/context.md` | Accumulated agent context across iterations |
-| `miser/ralph/judge-feedback.md` | Latest judge feedback (if using `--judge`) |
-
-```bash
-# Follow a running ralph loop in real-time
-tail -f ./miser/miser.log
 ```
+[miser] Status file: ./miser/status.json
+[miser] Log file:    ./miser/miser.log
+[miser] Tail logs:   tail -f ./miser/miser.log
+```
+
+| File | What's in it |
+|---|---|
+| `miser/status.json` | Which agent ran, what happened, timestamps |
+| `miser/miser.log` | Full play-by-play of the run |
+| `miser/ralph/status.json` | Ralph loop state — how miser knows where to resume |
+| `miser/ralph/context.md` | Everything the agents have written across iterations |
+| `miser/ralph/judge-feedback.md` | The judge's last rejection note (if using `--judge`) |
 
 ---
 
 ## Configuring Agent Order
 
-Edit `agents.json` (found in the miser package directory, or override via the file in your project) to change agent priority or disable agents:
+`agents.json` controls which agents run and in what order. Change `priority` to reorder, set `enabled: false` to skip one entirely:
 
 ```json
 [
