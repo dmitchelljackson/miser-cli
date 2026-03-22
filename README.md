@@ -1,12 +1,24 @@
 # miser
 
-> Route coding prompts through a hierarchy of free-tier AI coding agents. When one hits its limit, fall through to the next.
+> Get the most out of free-tier AI coding agents by routing prompts through them automatically — frontier models, zero dollars.
+
+The AI coding agent landscape is crowded right now, and most of the major players offer generous free tiers to win you over. miser is a single CLI that sits in front of all of them. You send it a prompt, it tries your preferred agent first, and when that one hits its daily limit it quietly falls through to the next one. By the end of the chain you've got access to thousands of free requests per day across multiple frontier-class models before you even touch a paid tier.
+
+It's not a wrapper or an abstraction — it just invokes the real CLI tools you already have installed, in the order you configure, and hands you back the result. Think of it as a load balancer for your free AI credits.
+
+**Why miser?**
+- AI coding agents have daily and monthly free limits. Hit one, move on automatically instead of waiting or paying.
+- Most free tiers reset every 24 hours. With a few agents in the chain you're unlikely to exhaust all of them in a day.
+- You stay on the real tools — auth, context, and file access all work exactly as each agent intends.
+- Supports long-running agentic work via the `--ralph` loop mode: agents iterate on a task across sessions until it's done, resuming automatically if interrupted.
 
 **Agents (in default priority order):**
-1. [Claude Code](https://claude.ai/code) — your paid subscription goes first
-2. [Gemini CLI](https://github.com/google-gemini/gemini-cli) — 1,000 req/day free
-3. [Qwen Code](https://github.com/QwenLM/qwen-code) — 1,000 req/day free
-4. [Mistral Vibe](https://github.com/mistralai/mistral-vibe) — ~1B tokens/month free
+1. [Claude Code](https://claude.ai/code) — your paid subscription, always tried first
+2. [Gemini CLI](https://github.com/google-gemini/gemini-cli) — Gemini 2.5, 1,000 req/day free
+3. [Qwen Code](https://github.com/QwenLM/qwen-code) — Qwen3-Coder (frontier-class), 1,000 req/day free
+4. [Mistral Vibe](https://github.com/mistralai/mistral-vibe) — Devstral-2, ~1B tokens/month free
+
+All four are frontier or near-frontier models. The order is configurable.
 
 ---
 
