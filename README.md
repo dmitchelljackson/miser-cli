@@ -34,11 +34,12 @@ miser --coward "refactor the payment module"
 
 Note: Mistral Vibe is skipped entirely in coward mode because it cannot run non-interactively without auto-approve.
 
-The `--coward` flag is a joke. The risk it guards against is not.
-
-Look — we called it `--coward` because it's funny, not because running with guardrails is a bad idea. Unsafe mode hands an AI agent the keys to your machine and says "go nuts." It can read your files, write your files, delete your files, run shell commands, install things, and make network calls. All without asking. That's the whole point — it's fast and non-interactive. But it also means if the model has a bad day, so do you.
-
-If you're running miser in unsafe mode (again, the default), please actually think about what you're pointing it at. On a personal dev machine with nothing sensitive? Probably fine. On a box with production credentials sitting around? Maybe don't. Not sure? Throw it in a VM or a container first — your future self will thank you. And for the love of all things holy, don't run it as root.
+> [!WARNING]
+> The `--coward` flag is a joke. The risk it guards against is not.
+>
+> Look — we called it `--coward` because it's funny, not because running with guardrails is a bad idea. Unsafe mode hands an AI agent the keys to your machine and says "go nuts." It can read your files, write your files, delete your files, run shell commands, install things, and make network calls. All without asking. That's the whole point — it's fast and non-interactive. But it also means if the model has a bad day, so do you.
+>
+> If you're running miser in unsafe mode (again, the default), please actually think about what you're pointing it at. On a personal dev machine with nothing sensitive? Probably fine. On a box with production credentials sitting around? Maybe don't. Not sure? Throw it in a VM or a container first — your future self will thank you. And for the love of all things holy, don't run it as root.
 
 ---
 
