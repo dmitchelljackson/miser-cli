@@ -52,19 +52,10 @@ One caveat: Mistral Vibe gets skipped entirely in coward mode because it physica
 
 ### Step 1 — Install the agent CLIs you want
 
-```bash
-# Claude Code (paid — skip this if you want fully free, see below)
-npm install -g @anthropic-ai/claude-code
-
-# Gemini CLI (free — 1,000 req/day with a Google account)
-npm install -g @google/gemini-cli
-
-# Qwen Code (free — 1,000 req/day with a Qwen account)
-npm install -g @qwen-code/qwen-code
-
-# Mistral Vibe (free — ~1B tokens/month, no account needed)
-pip install mistral-vibe
-```
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code/getting-started) — paid, but your subscription goes first so it's worth it
+- [Gemini CLI](https://github.com/google-gemini/gemini-cli#getting-started) — free, 1,000 req/day with a Google account
+- [Qwen Code](https://github.com/QwenLM/qwen-code#getting-started) — free, 1,000 req/day with a Qwen account
+- [Mistral Vibe](https://github.com/mistralai/mistral-vibe#installation) — free, ~1B tokens/month, no account needed
 
 ### Step 2 — Install miser
 
@@ -183,18 +174,10 @@ With Claude out of the picture miser falls through to:
 
 That's roughly 2,000 free requests per day from genuine frontier models before Mistral's effectively unlimited tier kicks in as a safety net. Not bad for zero dollars.
 
-**Auth for the free agents:**
-
-```bash
-# Gemini — sign in with your Google account
-gemini auth
-
-# Qwen — free account at qwen.ai
-qwen login
-
-# Mistral Vibe — nothing to do, just install it
-pip install mistral-vibe
-```
+Follow the setup instructions for each one you want:
+- [Gemini CLI](https://github.com/google-gemini/gemini-cli#getting-started)
+- [Qwen Code](https://github.com/QwenLM/qwen-code#getting-started)
+- [Mistral Vibe](https://github.com/mistralai/mistral-vibe#installation) — honestly just install it, there's nothing to auth
 
 ---
 
