@@ -34,6 +34,8 @@ miser --coward "refactor the payment module"
 
 Note: Mistral Vibe is skipped entirely in coward mode because it cannot run non-interactively without auto-approve.
 
+The `--coward` flag is a joke name, but the risk it guards against is not. Running AI agents on your machine with no guardrails means they can read, modify, and delete files, execute shell commands, install packages, and make network requests — all without asking. This is inherently dangerous. If you're using miser in unsafe mode (the default), you should fully understand what you're giving these agents access to and accept the consequences if something goes wrong. If you're unsure, run it in a VM or a throwaway container where the blast radius is limited. Don't run it as root.
+
 ---
 
 ## Installation
