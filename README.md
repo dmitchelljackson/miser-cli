@@ -2,6 +2,9 @@
 
 > Get the most out of free-tier AI coding agents by routing prompts through them automatically — frontier models, zero dollars.
 
+> [!NOTE]
+> This project was 100% vibe coded. Every line of it. It is very much alpha software and may be rough around the edges — use it, break it, file issues, send PRs. You have been warned (twice now, if you count the bit about the VM).
+
 The AI coding agent landscape is crowded right now, and most of the major players offer generous free tiers to win you over. miser is a single CLI that sits in front of all of them. You send it a prompt, it tries your preferred agent first, and when that one hits its daily limit it quietly falls through to the next one. By the end of the chain you've got access to thousands of free requests per day across multiple frontier-class models before you even touch a paid tier.
 
 It's not a wrapper or an abstraction — it just invokes the real CLI tools you already have installed, in the order you configure, and hands you back the result. Think of it as a load balancer for your free AI credits.
