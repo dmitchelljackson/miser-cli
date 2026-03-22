@@ -177,7 +177,7 @@ That's roughly 2,000 free requests per day from genuine frontier models before M
 Follow the setup instructions for each one you want:
 - [Gemini CLI](https://github.com/google-gemini/gemini-cli#getting-started)
 - [Qwen Code](https://github.com/QwenLM/qwen-code#getting-started)
-- [Mistral Vibe](https://github.com/mistralai/mistral-vibe#installation) — honestly just install it, there's nothing to auth
+- [Mistral Vibe](https://github.com/mistralai/mistral-vibe#installation) — free API key from [console.mistral.ai](https://console.mistral.ai), no card required
 
 ---
 
