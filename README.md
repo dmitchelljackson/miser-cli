@@ -3,7 +3,7 @@
 > Frontier AI coding agents, free tier, no babysitting required.
 
 > [!NOTE]
-> This project was 100% vibe coded. Every line of it. It is very much alpha software and may be rough around the edges — use it, break it, file issues, send PRs. You have been warned (twice now, if you count the bit about the VM).
+> This project was 100% vibe coded. Every line of it. It is very much alpha software and may be rough around the edges — use it, break it, file issues, send PRs. You have been warned (and you're about to be warned again, further down, about the VM thing).
 
 The AI coding agent landscape is crowded right now and most of the major players offer generous free tiers to win you over. The problem is they all have daily limits, and when you hit one you're just... stuck. Waiting. Or paying.
 
