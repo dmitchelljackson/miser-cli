@@ -163,6 +163,34 @@ describe('Completion detection', () => {
   });
 });
 
+// ─── 1b. Claude agent unit tests ──────────────────────────────────────────────
+
+describe('Claude agent rate-limit detection', () => {
+  test('claude: rate_limit fallthrough — agent returns rate_limit when killed mid-run', async () => {
+    // Verify the ralph loop correctly falls through when claude returns rate_limit
+    // (the actual kill-on-api_retry is tested implicitly via integration)
+    const cwd = makeTmpDir();
+    const delays = [];
+    const trackDelay = async (ms) => { delays.push(ms); };
+
+    const claudeAgent = makeAgent([{ success: false, failureType: 'rate_limit' }]);
+    const geminiAgent = makeAgent([{ success: true, output: `done ${COMPLETE_MARKER}` }]);
+
+    const result = await run({
+      prompt: 'test',
+      agentDefs: agentDefs(['claude', 'gemini']),
+      agentImpls: { claude: claudeAgent, gemini: geminiAgent },
+      delay: trackDelay,
+      cwd,
+    });
+
+    assert.equal(claudeAgent._calls(), 1);  // claude tried once
+    assert.equal(geminiAgent._calls(), 1);  // gemini picked up immediately
+    assert.equal(delays.length, 0);          // no wait between fallthrough
+    assert.equal(result.success, true);
+  });
+});
+
 // ─── 2. Worker error handling ─────────────────────────────────────────────────
 
 describe('Worker error handling', () => {

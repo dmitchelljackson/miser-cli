@@ -46,15 +46,19 @@ function run(prompt, { unsafe = true } = {}) {
             }
           }
 
-          // API error events
+          // API error events — kill the process immediately so we fall through
+          // to the next agent rather than blocking forever on Claude's internal retries
           if (event.type === 'system' && event.subtype === 'api_retry') {
             const err = event.error;
             if (err === 'rate_limit' || err === 'billing_error') {
               failureType = 'rate_limit';
+              logger.agentOut('claude', `api error: ${err} — killing and falling through`);
+              proc.kill();
             } else {
               failureType = 'network';
+              logger.agentOut('claude', `api error: ${err} — killing and falling through`);
+              proc.kill();
             }
-            logger.agentOut('claude', `api error: ${err}`);
           }
         } catch {
           // non-JSON line, log it

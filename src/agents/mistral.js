@@ -16,6 +16,8 @@ function run(prompt, { unsafe = true } = {}) {
     logger.agentOut('mistral', `spawning: vibe -p <prompt> --output text`);
 
     const proc = spawn('vibe', args, { env: merged(), stdio: ['ignore', 'pipe', 'pipe'] });
+    let resolved = false;
+    const done = (val) => { if (!resolved) { resolved = true; resolve(val); } };
 
     let stdout = '';
     let stderr = '';
@@ -37,31 +39,31 @@ function run(prompt, { unsafe = true } = {}) {
       if (stdout) process.stderr.write('\n');
 
       if (code === 0 && stdout.trim()) {
-        return resolve({ success: true, output: stdout.trim() });
+        return done({ success: true, output: stdout.trim() });
       }
 
       const combined = (stdout + stderr).toLowerCase();
 
       if (combined.includes('429') || combined.includes('rate limit') || combined.includes('too many requests') || combined.includes('quota exceeded')) {
-        return resolve({ success: false, failureType: 'rate_limit' });
+        return done({ success: false, failureType: 'rate_limit' });
       }
 
       if (combined.includes('econnrefused') || combined.includes('etimedout') || combined.includes('fetch failed') || combined.includes('network error')) {
-        return resolve({ success: false, failureType: 'network' });
+        return done({ success: false, failureType: 'network' });
       }
 
       if (combined.includes('invalid api key') || combined.includes('unauthenticated') || combined.includes('401 unauthorized') || combined.includes('no api key')) {
-        return resolve({ success: false, failureType: 'auth' });
+        return done({ success: false, failureType: 'auth' });
       }
 
-      return resolve({ success: false, failureType: 'unknown', detail: (stdout + stderr).slice(0, 300) });
+      return done({ success: false, failureType: 'unknown', detail: (stdout + stderr).slice(0, 300) });
     });
 
     proc.on('error', (err) => {
       if (err.code === 'ENOENT') {
-        resolve({ success: false, failureType: 'not_installed' });
+        done({ success: false, failureType: 'not_installed' });
       } else {
-        resolve({ success: false, failureType: 'network', detail: err.message });
+        done({ success: false, failureType: 'network', detail: err.message });
       }
     });
   });
