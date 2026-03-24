@@ -17,20 +17,30 @@ function run(prompt, { unsafe = true } = {}) {
 
     let result = null;
     let failureType = null;
+    let failureDetail = null;
     let stderr = '';
     let textBuffer = '';
+    let hadOutput = false;
 
     proc.stdout.on('data', (chunk) => {
       const lines = chunk.toString().split('\n');
       for (const line of lines) {
         if (!line.trim()) continue;
+        hadOutput = true;
         logger.write(`[claude:raw] ${line}`);
         try {
           const event = JSON.parse(line);
 
-          // Final result
+          // Final result — success
           if (event.type === 'result' && event.subtype === 'success') {
             result = event.result;
+          }
+
+          // Final result — non-success (max_turns, error_during_execution, etc.)
+          if (event.type === 'result' && event.subtype !== 'success') {
+            failureType = 'claude_' + event.subtype; // e.g. claude_error_max_turns
+            failureDetail = event.result || event.subtype;
+            logger.agentOut('claude', `result subtype=${event.subtype} — treating as failure`);
           }
 
           // Collect assistant text for real-time display
@@ -83,6 +93,13 @@ function run(prompt, { unsafe = true } = {}) {
         return resolve({ success: false, failureType: 'rate_limit' });
       }
 
+      // Non-success result subtype (e.g. error_max_turns, error_during_execution)
+      // Claude ran but couldn't complete — fall through to next agent
+      if (failureType !== null) {
+        logger.agentOut('claude', `exiting with failureType=${failureType} — falling through`);
+        return resolve({ success: false, failureType });
+      }
+
       // Try to distinguish network vs other failure from stderr
       const isNetwork =
         stderr.includes('ECONNREFUSED') ||
@@ -99,6 +116,15 @@ function run(prompt, { unsafe = true } = {}) {
         return resolve({ success: false, failureType: 'auth' });
       }
 
+      // Claude was actively working (had output) but exited without a result —
+      // likely context overflow, max turns without emitting result, or internal crash
+      if (hadOutput) {
+        logger.agentOut('claude', `exited without result after producing output (code=${code}) — likely context overflow or crash`);
+        return resolve({ success: false, failureType: 'incomplete', detail: stderr.slice(0, 300) });
+      }
+
+      // Claude never produced any output at all
+      logger.agentOut('claude', `exited with no output (code=${code})`);
       return resolve({ success: false, failureType: 'unknown', detail: stderr.slice(0, 300) });
     });
 
