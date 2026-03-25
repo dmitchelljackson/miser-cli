@@ -111,6 +111,9 @@ miser --ralph --judge "implement the feature"
 
 # Same, but give the judge a requirements file to compare against
 miser --ralph --judge --requirements SPEC.md "implement the feature"
+
+# Use multiple judges with fallthrough — tries claude first, then gemini on rate limit
+miser --ralph --judge --judge-agents claude gemini "implement the feature"
 ```
 
 ### Flags
@@ -123,6 +126,7 @@ miser --ralph --judge --requirements SPEC.md "implement the feature"
 | `--ralph` | Loop agents until the task is marked complete |
 | `--judge` | After completion, run a judge agent to approve or send back for rework (requires `--ralph`) |
 | `--judge-agent <id>` | Which agent to use as judge — must match an id in `agents.json` (default: `claude`) |
+| `--judge-agents <ids...>` | Multiple judges to try in priority order. Falls through to next on rate limits or failures. |
 | `--requirements <path>` | Requirements file for the judge to compare the work against |
 
 ### Exit codes

@@ -30,6 +30,7 @@ Examples:
   $ miser --coward "refactor this module"
   $ miser --ralph "build a REST API with tests"
   $ miser --ralph --judge "implement the feature in SPEC.md"
+  $ miser --ralph --judge --judge-agents claude gemini "implement the feature"
   $ miser --ralph --judge --requirements SPEC.md "implement the feature"
 `);
 
@@ -95,8 +96,14 @@ program
   .option(
     '--judge-agent <id>',
     'Which agent to use as judge. Must match an id in agents.json.\n' +
-    '                         (default: claude)',
+    '                         (default: claude). Use --judge-agents for multiple judges.',
     'claude'
+  )
+  .option(
+    '--judge-agents <ids...>',
+    'Multiple judges to try in priority order (e.g., --judge-agents claude gemini qwen).\n' +
+    '                         Falls through to next judge on rate limits or failures.\n' +
+    '                         Each ID must match an id in agents.json.'
   )
   .option(
     '--requirements <path>',
@@ -164,6 +171,7 @@ Status and logs are written to ./miser/ in the current directory.
         unsafe,
         judge: !!opts.judge,
         judgeAgent: opts.judgeAgent,
+        judgeAgents: opts.judgeAgents || null,
         requirementsFile: opts.requirements || null,
         cwd,
       });

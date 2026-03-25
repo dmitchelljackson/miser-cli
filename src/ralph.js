@@ -98,6 +98,7 @@ async function run({
   unsafe = true,
   judge = false,
   judgeAgent = 'claude',
+  judgeAgents = null,
   requirementsFile = null,
   // Dependency injection for testing
   agentDefs = null,
@@ -120,6 +121,16 @@ async function run({
     return raw.filter((a) => a.enabled && AGENTS[a.id]).sort((a, b) => a.priority - b.priority);
   })();
 
+  // Resolve judge agents hierarchy
+  const resolvedJudgeAgents = (() => {
+    const judgeIds = judgeAgents || [judgeAgent];
+    const allAgents = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'agents.json'), 'utf8'));
+    return judgeIds
+      .map(id => allAgents.find(a => a.id === id))
+      .filter(a => a && a.enabled && AGENTS[a.id])
+      .sort((a, b) => a.priority - b.priority);
+  })();
+
   // ── Resume or start fresh ──────────────────────────────────────────────────
   const existingState = loadState(statusFile);
   let iteration = 0;
@@ -130,6 +141,7 @@ async function run({
     resuming = true;
     iteration = existingState.iteration || 0;
     agentStartIndex = existingState.agent_index || 0;
+    const judgeIndex = existingState.judge_index ?? 0;
 
     logger.info(`[ralph] Resuming previous session (state: ${existingState.status}, iteration: ${iteration})`);
 
@@ -168,6 +180,8 @@ async function run({
     prompt: prompt.slice(0, 200),
     judge_active: judge,
     judge_agent: judgeAgent,
+    judge_agents: judgeAgents || [judgeAgent],
+    judge_index: existingState?.judge_index ?? 0,
     started_at: existingState?.started_at || new Date().toISOString(),
   });
 
@@ -255,62 +269,86 @@ async function run({
       return { success: true, iterations: iteration };
     }
 
-    // ── Judge ────────────────────────────────────────────────────────────────
-    logger.info(`[ralph] Running judge: ${judgeAgent}`);
+    // ── Judge with fallthrough ──────────────────────────────────────────────────
+    logger.info(`[ralph] Running judge hierarchy: ${resolvedJudgeAgents.map(j => j.name).join(' → ')}`);
     writeState(statusFile, { status: 'judging', iteration });
 
     const requirements = requirementsFile && fs.existsSync(requirementsFile)
       ? fs.readFileSync(requirementsFile, 'utf8')
       : null;
     const judgePromptText = buildJudgePrompt(prompt, requirements);
-    const judgeImpl = AGENTS[judgeAgent];
 
-    let judgeResult;
-    while (true) {
-      judgeResult = await judgeImpl.run(judgePromptText, { unsafe });
+    // Try judges starting from current judgeIndex
+    let judgeSuccess = false;
+    let judgeResult = null;
+    let currentJudgeIndex = existingState?.judge_index ?? 0;
 
-      if (judgeResult.failureType === 'network') {
-        logger.warn(`[ralph] Judge network error — retrying in 1 minute`);
-        const waitUntil = new Date(Date.now() + NETWORK_RETRY_MS).toISOString();
-        writeState(statusFile, { status: 'waiting_judge_network', iteration, wait_until: waitUntil });
-        await delay(NETWORK_RETRY_MS);
-        writeState(statusFile, { status: 'judging', iteration, wait_until: null });
-        logger.info(`[ralph] Retrying judge after network wait`);
-        continue;
+    while (currentJudgeIndex < resolvedJudgeAgents.length) {
+      const judgeDef = resolvedJudgeAgents[currentJudgeIndex];
+      const judgeImpl = AGENTS[judgeDef.id];
+      const pos = `${currentJudgeIndex + 1}/${resolvedJudgeAgents.length}`;
+
+      logger.info(`[ralph] Trying judge ${judgeDef.name} (${pos})`);
+      writeState(statusFile, { status: 'judging', iteration, judge_index: currentJudgeIndex });
+
+      // Inner retry loop for this judge
+      while (true) {
+        judgeResult = await judgeImpl.run(judgePromptText, { unsafe });
+
+        if (judgeResult.failureType === 'network') {
+          logger.warn(`[ralph] Judge network error — retrying in 1 minute`);
+          const waitUntil = new Date(Date.now() + NETWORK_RETRY_MS).toISOString();
+          writeState(statusFile, { status: 'waiting_judge_network', iteration, judge_index: currentJudgeIndex, wait_until: waitUntil });
+          await delay(NETWORK_RETRY_MS);
+          writeState(statusFile, { status: 'judging', iteration, judge_index: currentJudgeIndex, wait_until: null });
+          logger.info(`[ralph] Retrying judge ${judgeDef.name} after network wait`);
+          continue;
+        }
+
+        if (judgeResult.failureType === 'rate_limit' || judgeResult.failureType === 'auth') {
+          logger.warn(`[ralph] Judge ${judgeDef.name} rate limit/auth — falling through to next judge`);
+          break; // Fall through to next judge
+        }
+
+        if (!judgeResult.success) {
+          logger.warn(`[ralph] Judge ${judgeDef.name} failed (${judgeResult.failureType}) — falling through to next judge`);
+          break; // Fall through to next judge
+        }
+
+        judgeSuccess = true;
+        break;
       }
 
-      if (judgeResult.failureType === 'rate_limit' || judgeResult.failureType === 'auth') {
-        logger.warn(`[ralph] Judge rate limit/auth — retrying in 30 minutes`);
-        const waitUntil = new Date(Date.now() + EXHAUSTED_RETRY_MS).toISOString();
-        writeState(statusFile, { status: 'waiting_judge_rate_limit', iteration, wait_until: waitUntil });
-        await delay(EXHAUSTED_RETRY_MS);
-        writeState(statusFile, { status: 'judging', iteration, wait_until: null });
-        logger.info(`[ralph] Retrying judge after 30-minute wait`);
-        continue;
-      }
+      if (judgeSuccess) break;
+      currentJudgeIndex++;
+    }
 
-      if (!judgeResult.success) {
-        logger.warn(`[ralph] Judge failed (${judgeResult.failureType}) — retrying`);
-        continue;
-      }
-
-      break;
+    if (!judgeSuccess) {
+      // All judges exhausted — wait 30 min and restart from top
+      logger.warn(`[ralph] All judges exhausted — waiting 30 minutes`);
+      const waitUntil = new Date(Date.now() + EXHAUSTED_RETRY_MS).toISOString();
+      writeState(statusFile, { status: 'waiting_judge_exhausted', iteration, judge_index: 0, wait_until: waitUntil });
+      await delay(EXHAUSTED_RETRY_MS);
+      currentJudgeIndex = 0;
+      writeState(statusFile, { status: 'judging', iteration, judge_index: 0, wait_until: null });
+      logger.info(`[ralph] Resuming judge hierarchy from top after 30-minute wait`);
+      continue; // Continue main loop to re-judge
     }
 
     const judgeOutput = judgeResult.output.trim();
 
     if (judgeOutput.startsWith('APPROVED')) {
       writeState(statusFile, { status: 'complete', iteration, completed_at: new Date().toISOString() });
-      logger.success(`[ralph] Judge approved — task complete after ${iteration} iteration(s)`);
+      logger.success(`[ralph] Judge ${resolvedJudgeAgents[currentJudgeIndex].name} approved — task complete after ${iteration} iteration(s)`);
       return { success: true, iterations: iteration };
     }
 
-    // Rejected — save feedback, loop back
+    // Rejected — save feedback, loop back, reset judge index
     const feedback = judgeOutput.replace(/^REJECTED:\s*/i, '').trim();
     logger.warn(`[ralph] Judge rejected — feedback saved, looping back`);
     logger.info(`[ralph] Feedback: ${feedback.slice(0, 200)}`);
     fs.writeFileSync(feedbackFile, feedback);
-    writeState(statusFile, { status: 'working', iteration, agent_index: 0 });
+    writeState(statusFile, { status: 'working', iteration, agent_index: 0, judge_index: 0 });
     // Loop continues — COMPLETE marker won't be in new output, keeps going
   }
 }
